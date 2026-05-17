@@ -339,6 +339,25 @@
     .stat-label { color: var(--text-light); font-size: 0.95rem; }
     .stat-val   { font-weight: 800; font-size: 1.1rem; color: var(--text); }
 
+    /* ── Wrong review ── */
+    #resultScreen { overflow-y: auto; }
+    .wrong-review { width: 100%; margin-top: 18px; }
+    .review-title {
+      font-weight: 700; font-size: 0.9rem;
+      color: var(--text); margin-bottom: 10px;
+    }
+    .review-item {
+      background: #fff;
+      border: 2px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      font-size: 0.88rem;
+    }
+    .review-correct { color: #065f46; font-weight: 700; margin-bottom: 4px; }
+    .review-wrong   { color: #991b1b; text-decoration: line-through; opacity: 0.8; }
+    .review-timeout { color: var(--text-light); font-size: 0.82rem; }
+
     /* Shared buttons */
     .btn-primary {
       width: 100%;
@@ -409,6 +428,7 @@
   </div>
 
   <button class="btn-primary" onclick="startGame()">開始遊戲 ▶</button>
+  <div style="text-align:center;margin-top:16px;font-size:0.75rem;color:#a5b4fc;">v1.1</div>
 </div>
 
 <!-- ══ GAME ══ -->
@@ -484,6 +504,8 @@
     </div>
   </div>
 
+  <div class="wrong-review" id="wrongReview"></div>
+
   <button class="btn-primary" onclick="startGame()">再玩一次 🔄</button>
   <button class="btn-ghost" onclick="showMenu()">換難度</button>
 </div>
@@ -499,16 +521,18 @@
   const BMAX           = { '易': 4,  '中': 6,  '難': 10 };
 
   // ── State ──
-  let difficulty  = '易';
-  let heroHp      = HERO_HP_MAX;
-  let monsterHp   = MONSTER_HP_MAX;
-  let elapsedSecs = 0;
-  let atkElapsed  = 0;   // ms since last monster attack
-  let atkInterval = 0;   // ms total interval
-  let swTimer     = null;
-  let atkTimer    = null;
-  let canAnswer   = false;
-  let gameOver    = false;
+  let difficulty     = '易';
+  let heroHp         = HERO_HP_MAX;
+  let monsterHp      = MONSTER_HP_MAX;
+  let elapsedSecs    = 0;
+  let atkElapsed     = 0;
+  let atkInterval    = 0;
+  let swTimer        = null;
+  let atkTimer       = null;
+  let canAnswer      = false;
+  let gameOver       = false;
+  let currentQ       = null;
+  let wrongQuestions = [];
 
   // ── Helpers ──
   const $ = id => document.getElementById(id);
@@ -607,6 +631,13 @@
         atkElapsed = 0;
         if (canAnswer) {          // 時間到且題目還未作答 → 魔王攻擊
           canAnswer = false;
+          if (currentQ) {
+            wrongQuestions.push({
+              a2: currentQ.a2, b2: currentQ.b2,
+              correctMid: currentQ.options.find(o => o.ok).mid,
+              chosenMid: null
+            });
+          }
           doMonsterAttack();
           setTimeout(nextQuestion, 1000);
         }
@@ -686,9 +717,11 @@
   }
 
   function startGame() {
-    heroHp    = HERO_HP_MAX;
-    monsterHp = MONSTER_HP_MAX;
-    gameOver  = false;
+    heroHp         = HERO_HP_MAX;
+    monsterHp      = MONSTER_HP_MAX;
+    gameOver       = false;
+    wrongQuestions = [];
+    currentQ       = null;
     // Reset sprites
     ['heroCard', 'monsterCard'].forEach(id => {
       $(id).style.animation = '';
@@ -704,17 +737,17 @@
 
   function nextQuestion() {
     if (gameOver) return;
-    atkElapsed = 0;   // 每題重置倒數
+    atkElapsed = 0;
     canAnswer  = true;
-    const q   = genQuestion();
+    currentQ   = genQuestion();
     const container = $('optionsContainer');
     container.innerHTML = '';
-    q.options.forEach(opt => {
+    currentQ.options.forEach(opt => {
       const btn = document.createElement('button');
       btn.className  = 'opt-btn';
-      btn.innerHTML  = renderExpr(q.a2, opt.mid, q.b2);
+      btn.innerHTML  = renderExpr(currentQ.a2, opt.mid, currentQ.b2);
       btn.dataset.ok = opt.ok;
-      btn.onclick    = () => handleAnswer(btn, opt.ok, container);
+      btn.onclick    = () => handleAnswer(btn, opt.ok, opt.mid, container);
       container.appendChild(btn);
     });
   }
@@ -727,12 +760,20 @@
   }
 
   // ── Answer handling ──
-  function handleAnswer(btn, isOk, container) {
+  function handleAnswer(btn, isOk, chosenMid, container) {
     if (!canAnswer || gameOver) return;
     canAnswer = false;
     lockButtons(container);
 
-    atkElapsed = 0;   // 答對或答錯都立即重置倒數
+    atkElapsed = 0;
+
+    if (!isOk && currentQ) {
+      wrongQuestions.push({
+        a2: currentQ.a2, b2: currentQ.b2,
+        correctMid: currentQ.options.find(o => o.ok).mid,
+        chosenMid
+      });
+    }
 
     if (isOk) {
       monsterHp--;
@@ -789,6 +830,25 @@
     $('rTime').textContent    = fmtTime(elapsedSecs);
     $('rCorrect').textContent = `${MONSTER_HP_MAX - monsterHp} / ${MONSTER_HP_MAX}`;
     $('rTotal').textContent   = `剩餘 ${Math.max(0, heroHp)} 血`;
+
+    // ── 錯題回顧 ──
+    const review = $('wrongReview');
+    review.innerHTML = `<div class="review-title">📋 錯題回顧</div>`;
+    if (wrongQuestions.length === 0) {
+      review.innerHTML += `<div class="review-item" style="text-align:center;color:#065f46;font-weight:700;">🎯 全部答對，零失誤！</div>`;
+      return;
+    }
+    review.querySelector('.review-title').textContent = `📋 錯題回顧（${wrongQuestions.length} 題）`;
+    wrongQuestions.forEach(({ a2, b2, correctMid, chosenMid }) => {
+      const item = document.createElement('div');
+      item.className = 'review-item';
+      item.innerHTML = `
+        <div class="review-correct">✅ ${renderExpr(a2, correctMid, b2)}</div>
+        ${chosenMid !== null
+          ? `<div class="review-wrong">❌ ${renderExpr(a2, chosenMid, b2)}</div>`
+          : `<div class="review-timeout">⏰ 超時未作答</div>`}`;
+      review.appendChild(item);
+    });
   }
 </script>
 </body>
