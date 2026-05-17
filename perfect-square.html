@@ -551,10 +551,9 @@
 
     const pool = new Set();
     for (const fn of shuffle([
-      () => -correct,
-      () => sign * a * b,
-      () => -sign * a * b,
-      () => sign * 2 * (a + b),
+      () => sign * a * b,          // 忘記乘 2
+      () => -sign * a * b,         // 忘記乘 2 且符號錯
+      () => sign * 2 * (a + b),    // 錯誤公式
       () => correct + 2, () => correct - 2,
       () => correct + a, () => correct - b,
       () => correct + randInt(3, 8),
@@ -562,7 +561,8 @@
     ])) {
       if (pool.size >= 2) break;
       const v = fn();
-      if (Number.isInteger(v) && v !== 0 && v !== correct && !pool.has(v)) pool.add(v);
+      // 排除 0、正確答案、以及負號版（同樣是合法完全平方式）
+      if (Number.isInteger(v) && v !== 0 && v !== correct && v !== -correct && !pool.has(v)) pool.add(v);
     }
     let off = 1;
     while (pool.size < 2) { if (!pool.has(correct + off)) pool.add(correct + off); off++; }
