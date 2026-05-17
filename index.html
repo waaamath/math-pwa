@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#667eea" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>正負數加減練習</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>➕➖ 正負數練習</h1>
+
+  <div class="card">
+
+    <!-- Settings -->
+    <div class="settings">
+      <div>
+        <label>選擇運算</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active" data-op="+">＋ 加法</button>
+          <button class="toggle-btn active" data-op="-">－ 減法</button>
+        </div>
+      </div>
+      <div>
+        <label>數字範圍</label>
+        <div class="range-row">
+          <input type="number" id="range-min" value="-10" min="-99" max="0" />
+          <span>到</span>
+          <input type="number" id="range-max" value="10" min="0" max="99" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Score -->
+    <div class="score-bar">
+      <span>✅ 答對 <strong class="correct" id="score-correct">0</strong></span>
+      <span>❌ 答錯 <strong class="wrong" id="score-wrong">0</strong></span>
+      <span>📝 共 <strong class="total" id="score-total">0</strong> 題</span>
+    </div>
+
+    <!-- Problem -->
+    <div class="problem" id="problem"></div>
+
+    <!-- Number pad -->
+    <div class="numpad">
+      <button data-val="7">7</button>
+      <button data-val="8">8</button>
+      <button data-val="9">9</button>
+      <button data-val="4">4</button>
+      <button data-val="5">5</button>
+      <button data-val="6">6</button>
+      <button data-val="1">1</button>
+      <button data-val="2">2</button>
+      <button data-val="3">3</button>
+      <button class="btn-neg" data-val="neg">±</button>
+      <button data-val="0">0</button>
+      <button class="btn-del" data-val="del">⌫</button>
+    </div>
+
+    <!-- Answer -->
+    <div class="answer-area">
+      <input type="number" id="answer-input" placeholder="答案" inputmode="numeric" autocomplete="off" />
+      <button id="check-btn">確認</button>
+    </div>
+
+    <!-- Feedback -->
+    <div class="feedback" id="feedback"></div>
+
+    <!-- Next -->
+    <button id="next-btn">下一題 →</button>
+
+    <!-- Reset -->
+    <button id="reset-btn">重置分數</button>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
