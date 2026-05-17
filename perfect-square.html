@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#6366f1">
+  <title>判別平方式</title>
+  <link rel="manifest" href="perfect-square-manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="判別平方式">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --bg: #eef2ff;
+      --card: #ffffff;
+      --text: #1e1b4b;
+      --text-light: #6b7280;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+      background: var(--bg);
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screen {
+      width: 100%;
+      max-width: 430px;
+      min-height: 100dvh;
+      display: none;
+      flex-direction: column;
+      padding: 24px 20px 32px;
+    }
+    .screen.active { display: flex; }
+
+    /* ── Menu ── */
+    .menu-hero {
+      text-align: center;
+      margin: 48px 0 36px;
+    }
+    .menu-hero .icon { font-size: 3.5rem; }
+    .menu-hero h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-top: 8px;
+    }
+    .menu-hero p { color: var(--text-light); margin-top: 6px; font-size: 0.95rem; }
+
+    .section-label {
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .diff-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .diff-btn {
+      border-radius: 16px;
+      border: 3px solid transparent;
+      padding: 18px 8px;
+      cursor: pointer;
+      text-align: center;
+      font-weight: 700;
+      transition: transform 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+    .diff-btn .d-icon { font-size: 1.6rem; }
+    .diff-btn .d-name { font-size: 1.05rem; margin-top: 4px; }
+    .diff-btn .d-time { font-size: 0.72rem; opacity: 0.65; margin-top: 3px; }
+    .diff-btn.easy   { background: #d1fae5; color: #065f46; }
+    .diff-btn.medium { background: #fef3c7; color: #92400e; }
+    .diff-btn.hard   { background: #fee2e2; color: #991b1b; }
+    .diff-btn.selected { border-color: currentColor; transform: scale(1.06); }
+
+    .rule-box {
+      background: #e0e7ff;
+      border-radius: 14px;
+      padding: 16px;
+      color: #3730a3;
+      font-size: 0.88rem;
+      line-height: 1.65;
+      margin-bottom: 28px;
+    }
+    .rule-box strong { display: block; margin-bottom: 4px; font-size: 0.92rem; }
+
+    /* ── Game ── */
+    .game-topbar {
+      display: flex;
+      justify-content: flex-end;
+      padding: 4px 0 6px;
+    }
+    .sw-small { font-size: 0.82rem; color: var(--text-light); }
+    .sw-small b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+    /* Battle arena */
+    .arena {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 6px 0 10px;
+    }
+    .fighter-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 44%;
+      gap: 5px;
+    }
+    .sprite-card {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      background: #eef2ff;
+      border: 3px solid #c7d2fe;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.7rem;
+      line-height: 1;
+      transition: background 0.12s, border-color 0.12s;
+      user-select: none;
+    }
+    .monster-card { background: #fff1f2; border-color: #fecaca; }
+    .sprite-card.hit-flash { background: #fee2e2 !important; border-color: #ef4444 !important; }
+    .fighter-name { font-size: 0.75rem; font-weight: 600; color: var(--text-light); }
+    .hp-track {
+      width: 100%;
+      height: 10px;
+      background: #e5e7eb;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .hp-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.4s ease;
+    }
+    .hero-hp    { background: var(--success); }
+    .monster-hp { background: #ef4444; }
+    .hp-text { font-size: 0.7rem; color: var(--text-light); }
+    .arena-mid {
+      display: flex;
+      align-items: center;
+      padding-top: 22px;
+      font-size: 1rem;
+      color: var(--text-light);
+      font-weight: 700;
+    }
+    /* Hit emoji floats between characters */
+    .hit-fx {
+      position: absolute;
+      left: 50%; top: 6px;
+      transform: translateX(-50%);
+      font-size: 2rem;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 10;
+    }
+
+    /* Monster attack countdown bar */
+    .atk-wrap { margin-bottom: 10px; }
+    .atk-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 3px;
+    }
+    .atk-label    { font-size: 0.75rem; color: var(--text-light); }
+    .atk-countdown{ font-size: 0.75rem; font-weight: 700; color: var(--text); }
+    .atk-track {
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .atk-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: var(--success);
+    }
+
+    /* Question */
+    .prompt {
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      flex: 1;
+    }
+    .opt-btn {
+      background: white;
+      border: 3px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 16px 14px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+      line-height: 1.3;
+    }
+    .opt-btn:active { transform: scale(0.97); }
+    .opt-btn.correct { background: #d1fae5; border-color: var(--success); color: #065f46; }
+    .opt-btn.wrong   { background: #fee2e2; border-color: var(--danger);  color: #991b1b; }
+    .opt-btn sup { font-size: 0.65em; vertical-align: super; }
+    .hint-box {
+      margin-top: 8px;
+      text-align: center;
+      font-size: 0.72rem;
+      color: #a5b4fc;
+      line-height: 1.5;
+    }
+
+    /* ── Animations ── */
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+    @keyframes pop {
+      0%,100% { transform: scale(1); }
+      50%      { transform: scale(1.07); }
+    }
+    @keyframes heroAttack {
+      0%   { transform: translateX(0); }
+      40%  { transform: translateX(54px); }
+      100% { transform: translateX(0); }
+    }
+    @keyframes monsterAttack {
+      0%   { transform: translateX(0); }
+      40%  { transform: translateX(-54px); }
+      100% { transform: translateX(0); }
+    }
+    @keyframes spriteHit {
+      0%,100% { transform: rotate(0) scale(1); }
+      30%     { transform: rotate(-14deg) scale(0.88); }
+      70%     { transform: rotate(14deg) scale(0.88); }
+    }
+    @keyframes hitFxPop {
+      0%   { opacity: 0; transform: translateX(-50%) scale(0.3) translateY(0); }
+      40%  { opacity: 1; transform: translateX(-50%) scale(1.3) translateY(-10px); }
+      100% { opacity: 0; transform: translateX(-50%) scale(1)   translateY(-24px); }
+    }
+    @keyframes monsterDie {
+      0%   { transform: scale(1) rotate(0); opacity: 1; }
+      50%  { transform: scale(1.4) rotate(18deg); opacity: 0.7; }
+      100% { transform: scale(0) rotate(50deg); opacity: 0; }
+    }
+    @keyframes heroDie {
+      0%   { transform: rotate(0) translateY(0); opacity: 1; }
+      100% { transform: rotate(-85deg) translateY(18px); opacity: 0; }
+    }
+    .anim-shake          { animation: shake          0.4s ease; }
+    .anim-pop            { animation: pop            0.3s ease; }
+    .anim-hero-attack    { animation: heroAttack     0.45s ease-in-out; }
+    .anim-monster-attack { animation: monsterAttack  0.45s ease-in-out; }
+    .anim-sprite-hit     { animation: spriteHit      0.4s ease; }
+    .anim-hit-fx         { animation: hitFxPop       0.65s ease forwards; }
+    .anim-monster-die    { animation: monsterDie     0.65s ease forwards; }
+    .anim-hero-die       { animation: heroDie        0.7s  ease forwards; }
+
+    /* Feedback flash */
+    .feedback-flash {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 5.5rem;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .feedback-flash.on { opacity: 1; }
+
+    /* ── Result ── */
+    .result-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .result-emoji { font-size: 4.5rem; }
+    .result-fraction {
+      font-size: 3.5rem;
+      font-weight: 900;
+      color: var(--primary);
+      letter-spacing: -1px;
+    }
+    .result-sub { color: var(--text-light); font-size: 1rem; }
+    .result-grade {
+      margin-top: 10px;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .stars { font-size: 1.8rem; letter-spacing: 4px; margin-top: 4px; }
+
+    .result-stats {
+      width: 100%;
+      background: #f8faff;
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .stat-label { color: var(--text-light); font-size: 0.95rem; }
+    .stat-val   { font-weight: 800; font-size: 1.1rem; color: var(--text); }
+
+    /* Shared buttons */
+    .btn-primary {
+      width: 100%;
+      padding: 17px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 18px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 14px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-primary:active { background: var(--primary-dark); transform: scale(0.98); }
+
+    .btn-ghost {
+      width: 100%;
+      padding: 15px;
+      background: transparent;
+      color: var(--primary);
+      border: 2.5px solid var(--primary);
+      border-radius: 18px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: all 0.15s;
+    }
+    .btn-ghost:active { background: #e0e7ff; }
+  </style>
+</head>
+<body>
+
+<!-- ══ MENU ══ -->
+<div class="screen active" id="menuScreen">
+  <div class="menu-hero">
+    <div class="icon">🔢</div>
+    <h1>判別平方式</h1>
+    <p>從三個式子中找出完全平方式！</p>
+  </div>
+
+  <div class="section-label">選擇難度</div>
+  <div class="diff-grid">
+    <div class="diff-btn easy selected" onclick="selectDiff('易', this)">
+      <div class="d-icon">😊</div>
+      <div class="d-name">易</div>
+      <div class="d-time">攻擊每20秒</div>
+    </div>
+    <div class="diff-btn medium" onclick="selectDiff('中', this)">
+      <div class="d-icon">🤔</div>
+      <div class="d-name">中</div>
+      <div class="d-time">攻擊每15秒</div>
+    </div>
+    <div class="diff-btn hard" onclick="selectDiff('難', this)">
+      <div class="d-icon">😤</div>
+      <div class="d-name">難</div>
+      <div class="d-time">攻擊每10秒</div>
+    </div>
+  </div>
+
+  <div class="rule-box">
+    <strong>📐 遊戲規則</strong>
+    三個式子的 x² 係數和常數項都是平方數，<br>
+    但只有一個的一次項係數符合：<br>
+    <strong style="display:inline">(ax ± b)² = a²x² ± <u>2ab</u>x + b²</strong><br>
+    注意正負號！找出正確的完全平方式！
+  </div>
+
+  <button class="btn-primary" onclick="startGame()">開始遊戲 ▶</button>
+</div>
+
+<!-- ══ GAME ══ -->
+<div class="screen" id="gameScreen">
+
+  <!-- Topbar: stopwatch -->
+  <div class="game-topbar">
+    <div class="sw-small">⏱ <b id="swDisplay">00:00</b></div>
+  </div>
+
+  <!-- Battle arena -->
+  <div class="arena">
+    <!-- Hero -->
+    <div class="fighter-col">
+      <div class="sprite-card" id="heroCard">🧙</div>
+      <div class="fighter-name">勇者</div>
+      <div class="hp-track"><div class="hp-fill hero-hp" id="heroHpBar" style="width:100%"></div></div>
+      <div class="hp-text" id="heroHpText">30 / 30</div>
+    </div>
+
+    <!-- Center: VS + hit effect -->
+    <div class="arena-mid">
+      <span>⚔️</span>
+      <div class="hit-fx" id="hitFx"></div>
+    </div>
+
+    <!-- Monster -->
+    <div class="fighter-col">
+      <div class="sprite-card monster-card" id="monsterCard">👹</div>
+      <div class="fighter-name">魔王</div>
+      <div class="hp-track"><div class="hp-fill monster-hp" id="monsterHpBar" style="width:100%"></div></div>
+      <div class="hp-text" id="monsterHpText">10 / 10</div>
+    </div>
+  </div>
+
+  <!-- Monster attack countdown -->
+  <div class="atk-wrap">
+    <div class="atk-header">
+      <span class="atk-label">⚡ 魔王攻擊倒數</span>
+      <span class="atk-countdown" id="atkCountdown">20s</span>
+    </div>
+    <div class="atk-track"><div class="atk-fill" id="atkFill" style="width:100%"></div></div>
+  </div>
+
+  <div class="prompt">選出完全平方式 👇</div>
+  <div class="options" id="optionsContainer"></div>
+
+  <div class="hint-box">
+    (ax+b)² = a²x²+2abx+b² &nbsp;│&nbsp; (ax−b)² = a²x²−2abx+b²
+  </div>
+</div>
+
+<!-- ══ RESULT ══ -->
+<div class="screen" id="resultScreen">
+  <div style="height:40px"></div>
+  <div class="result-body">
+    <div class="result-emoji" id="resultEmoji">🎉</div>
+    <div class="result-grade" id="rGrade">完成！</div>
+    <div class="stars" id="rStars">⭐⭐⭐</div>
+    <div class="result-stats">
+      <div class="stat-row">
+        <span class="stat-label">⏱ 時間</span>
+        <span class="stat-val" id="rTime">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">⚔️ 魔王傷害</span>
+        <span class="stat-val" id="rCorrect">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">❤️ 勇者血量</span>
+        <span class="stat-val" id="rTotal">—</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-primary" onclick="startGame()">再玩一次 🔄</button>
+  <button class="btn-ghost" onclick="showMenu()">換難度</button>
+</div>
+
+<div class="feedback-flash" id="flash"></div>
+
+<script>
+  // ── Config ──
+  const MONSTER_HP_MAX = 10;
+  const HERO_HP_MAX    = 30;
+  const ATK_INTERVAL   = { '易': 20, '中': 15, '難': 10 }; // seconds
+  const AMAX           = { '易': 4,  '中': 6,  '難': 10 };
+  const BMAX           = { '易': 4,  '中': 6,  '難': 10 };
+
+  // ── State ──
+  let difficulty  = '易';
+  let heroHp      = HERO_HP_MAX;
+  let monsterHp   = MONSTER_HP_MAX;
+  let elapsedSecs = 0;
+  let atkElapsed  = 0;   // ms since last monster attack
+  let atkInterval = 0;   // ms total interval
+  let swTimer     = null;
+  let atkTimer    = null;
+  let canAnswer   = false;
+  let gameOver    = false;
+
+  // ── Helpers ──
+  const $ = id => document.getElementById(id);
+  const randInt = (lo, hi) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    $(id).classList.add('active');
+  }
+
+  function fmtTime(secs) {
+    const m = Math.floor(secs / 60), s = secs % 60;
+    return m > 0 ? `${m} 分 ${s} 秒` : `${s} 秒`;
+  }
+
+  // ── Difficulty ──
+  function selectDiff(d, el) {
+    difficulty = d;
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  // ── Question generation ──
+  function genQuestion() {
+    let a, b;
+    do { a = randInt(1, AMAX[difficulty]); b = randInt(1, BMAX[difficulty]); }
+    while (a === 1 && b === 1);
+
+    const a2 = a * a, b2 = b * b;
+    const sign    = Math.random() < 0.5 ? 1 : -1;
+    const correct = sign * 2 * a * b;
+
+    const pool = new Set();
+    for (const fn of shuffle([
+      () => -correct,
+      () => sign * a * b,
+      () => -sign * a * b,
+      () => sign * 2 * (a + b),
+      () => correct + 2, () => correct - 2,
+      () => correct + a, () => correct - b,
+      () => correct + randInt(3, 8),
+      () => correct - randInt(3, 8),
+    ])) {
+      if (pool.size >= 2) break;
+      const v = fn();
+      if (Number.isInteger(v) && v !== 0 && v !== correct && !pool.has(v)) pool.add(v);
+    }
+    let off = 1;
+    while (pool.size < 2) { if (!pool.has(correct + off)) pool.add(correct + off); off++; }
+
+    return { a2, b2, options: shuffle([
+      { mid: correct,      ok: true  },
+      { mid: [...pool][0], ok: false },
+      { mid: [...pool][1], ok: false },
+    ])};
+  }
+
+  function renderExpr(a2, mid, b2) {
+    const x2p = a2 === 1 ? 'x<sup>2</sup>' : `${a2}x<sup>2</sup>`;
+    const abs  = Math.abs(mid);
+    const midp = (mid > 0 ? '+ ' : '− ') + (abs === 1 ? 'x' : `${abs}x`);
+    return `${x2p} ${midp} + ${b2 === 1 ? '1' : b2}`;
+  }
+
+  // ── Stopwatch ──
+  function startStopwatch() {
+    clearInterval(swTimer);
+    elapsedSecs = 0;
+    swTimer = setInterval(() => {
+      elapsedSecs++;
+      const m = String(Math.floor(elapsedSecs / 60)).padStart(2, '0');
+      const s = String(elapsedSecs % 60).padStart(2, '0');
+      $('swDisplay').textContent = `${m}:${s}`;
+    }, 1000);
+  }
+
+  // ── Monster attack timer (100 ms tick for smooth bar) ──
+  function startAtkTimer() {
+    clearInterval(atkTimer);
+    atkElapsed  = 0;
+    atkInterval = ATK_INTERVAL[difficulty] * 1000;
+    renderAtkBar();
+
+    atkTimer = setInterval(() => {
+      atkElapsed += 100;
+      renderAtkBar();
+      if (atkElapsed >= atkInterval) {
+        atkElapsed = 0;
+        if (canAnswer) {          // 時間到且題目還未作答 → 魔王攻擊
+          canAnswer = false;
+          doMonsterAttack();
+          setTimeout(nextQuestion, 1000);
+        }
+      }
+    }, 100);
+  }
+
+  function renderAtkBar() {
+    const frac = 1 - atkElapsed / atkInterval;
+    const fill = $('atkFill');
+    fill.style.width      = `${frac * 100}%`;
+    fill.style.background = frac > 0.5 ? '#22c55e' : frac > 0.25 ? '#f59e0b' : '#ef4444';
+    const secsLeft = Math.ceil((atkInterval - atkElapsed) / 1000);
+    $('atkCountdown').textContent = `${secsLeft}s`;
+  }
+
+  // ── Battle UI update ──
+  function updateBattleUI() {
+    const hPct = (heroHp    / HERO_HP_MAX)    * 100;
+    const mPct = (monsterHp / MONSTER_HP_MAX) * 100;
+    $('heroHpBar').style.width    = `${Math.max(0, hPct)}%`;
+    $('monsterHpBar').style.width = `${Math.max(0, mPct)}%`;
+    $('heroHpText').textContent    = `${Math.max(0, heroHp)} / ${HERO_HP_MAX}`;
+    $('monsterHpText').textContent = `${Math.max(0, monsterHp)} / ${MONSTER_HP_MAX}`;
+  }
+
+  // ── Animations ──
+  function anim(el, cls, duration) {
+    el.classList.add(cls);
+    setTimeout(() => el.classList.remove(cls), duration);
+  }
+
+  function showHitFx(emoji) {
+    const fx = $('hitFx');
+    fx.textContent = emoji;
+    fx.classList.remove('anim-hit-fx');
+    void fx.offsetWidth; // reflow to restart
+    fx.classList.add('anim-hit-fx');
+  }
+
+  function flashCard(cardId, duration = 400) {
+    const card = $(cardId);
+    card.classList.add('hit-flash');
+    setTimeout(() => card.classList.remove('hit-flash'), duration);
+  }
+
+  // ── Monster attacks hero ──
+  function doMonsterAttack() {
+    if (gameOver) return;
+    heroHp--;
+    // Monster lunges left → hero flashes
+    anim($('monsterCard'), 'anim-monster-attack', 500);
+    setTimeout(() => {
+      anim($('heroCard'), 'anim-sprite-hit', 400);
+      flashCard('heroCard');
+      showHitFx('💥');
+    }, 220);
+
+    updateBattleUI();
+
+    if (heroHp <= 0) {
+      clearInterval(atkTimer);
+      clearInterval(swTimer);
+      canAnswer = false;
+      setTimeout(() => {
+        anim($('heroCard'), 'anim-hero-die', 700);
+        setTimeout(() => endGame(false), 800);
+      }, 300);
+    }
+  }
+
+  // ── Game flow ──
+  function showMenu() {
+    clearInterval(swTimer);
+    clearInterval(atkTimer);
+    showScreen('menuScreen');
+  }
+
+  function startGame() {
+    heroHp    = HERO_HP_MAX;
+    monsterHp = MONSTER_HP_MAX;
+    gameOver  = false;
+    // Reset sprites
+    ['heroCard', 'monsterCard'].forEach(id => {
+      $(id).style.animation = '';
+      $(id).style.opacity   = '';
+      $(id).style.transform = '';
+    });
+    showScreen('gameScreen');
+    updateBattleUI();
+    startStopwatch();
+    startAtkTimer();
+    nextQuestion();
+  }
+
+  function nextQuestion() {
+    if (gameOver) return;
+    atkElapsed = 0;   // 每題重置倒數
+    canAnswer  = true;
+    const q   = genQuestion();
+    const container = $('optionsContainer');
+    container.innerHTML = '';
+    q.options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className  = 'opt-btn';
+      btn.innerHTML  = renderExpr(q.a2, opt.mid, q.b2);
+      btn.dataset.ok = opt.ok;
+      btn.onclick    = () => handleAnswer(btn, opt.ok, container);
+      container.appendChild(btn);
+    });
+  }
+
+  function lockButtons(container) {
+    container.querySelectorAll('.opt-btn').forEach(b => {
+      b.disabled = true;
+      if (b.dataset.ok === 'true') b.classList.add('correct');
+    });
+  }
+
+  // ── Answer handling ──
+  function handleAnswer(btn, isOk, container) {
+    if (!canAnswer || gameOver) return;
+    canAnswer = false;
+    lockButtons(container);
+
+    atkElapsed = 0;   // 答對或答錯都立即重置倒數
+
+    if (isOk) {
+      monsterHp--;
+      btn.classList.add('correct', 'anim-pop');
+
+      // Hero lunges right → monster shakes
+      anim($('heroCard'), 'anim-hero-attack', 480);
+      setTimeout(() => {
+        anim($('monsterCard'), 'anim-sprite-hit', 400);
+        flashCard('monsterCard');
+        showHitFx('⚔️');
+      }, 230);
+
+      updateBattleUI();
+
+      if (monsterHp <= 0) {
+        gameOver = true;
+        clearInterval(atkTimer);
+        clearInterval(swTimer);
+        setTimeout(() => {
+          $('monsterCard').style.animation = 'monsterDie 0.65s ease forwards';
+          setTimeout(() => endGame(true), 750);
+        }, 400);
+        return;
+      }
+    } else {
+      btn.classList.add('wrong', 'anim-shake');
+      doMonsterAttack();  // 答錯 → 魔王立刻攻擊
+    }
+
+    setTimeout(nextQuestion, 1000);
+  }
+
+  // ── End game ──
+  function endGame(won) {
+    gameOver = true;
+    showScreen('resultScreen');
+
+    if (won) {
+      const secs = elapsedSecs;
+      let stars;
+      if      (secs <= 40)  stars = '⭐⭐⭐';
+      else if (secs <= 80)  stars = '⭐⭐';
+      else                  stars = '⭐';
+      $('resultEmoji').textContent = '🏆';
+      $('rGrade').textContent      = '魔王倒下！恭喜過關！';
+      $('rStars').textContent      = stars;
+    } else {
+      $('resultEmoji').textContent = '💀';
+      $('rGrade').textContent      = '勇者陣亡…再挑戰吧！';
+      $('rStars').textContent      = '';
+    }
+
+    $('rTime').textContent    = fmtTime(elapsedSecs);
+    $('rCorrect').textContent = `${MONSTER_HP_MAX - monsterHp} / ${MONSTER_HP_MAX}`;
+    $('rTotal').textContent   = `剩餘 ${Math.max(0, heroHp)} 血`;
+  }
+</script>
+</body>
+</html>

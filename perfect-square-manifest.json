@@ -1,0 +1,18 @@
+{
+  "name": "判別平方式",
+  "short_name": "平方式",
+  "description": "從三個式子中找出完全平方式的數學遊戲",
+  "start_url": "./perfect-square.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#6366f1",
+  "background_color": "#eef2ff",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔢</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
