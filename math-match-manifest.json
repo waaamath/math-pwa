@@ -1,0 +1,18 @@
+{
+  "name": "數學配對遊戲",
+  "short_name": "數學配對",
+  "description": "翻牌配對算式與答案，練習次方、根號與負數運算",
+  "start_url": "./math-match.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#6366f1",
+  "background_color": "#eef2ff",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎴</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

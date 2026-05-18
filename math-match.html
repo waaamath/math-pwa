@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#6366f1">
+  <title>數學配對</title>
+  <link rel="manifest" href="math-match-manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="數學配對">
+  <!-- KaTeX — LaTeX-quality math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --primary: #6366f1; --primary-dark: #4f46e5;
+      --success: #22c55e; --danger: #ef4444;
+      --bg: #eef2ff; --text: #1e1b4b; --text-light: #6b7280;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+      background: var(--bg); min-height: 100dvh;
+    }
+
+    /* ── Screens ── */
+    .screen {
+      width: 100%; max-width: 430px; margin: 0 auto;
+      min-height: 100dvh; display: none; flex-direction: column;
+      padding: 24px 20px 36px;
+    }
+    .screen.active { display: flex; }
+
+    /* ── MENU ── */
+    .menu-hero { text-align: center; margin: 32px 0 28px; }
+    .menu-hero .icon { font-size: 3rem; line-height: 1; }
+    .menu-hero h1 { font-size: 1.9rem; font-weight: 800; color: var(--primary); margin-top: 10px; }
+    .menu-hero p { color: var(--text-light); margin-top: 6px; font-size: 0.92rem; }
+
+    .section-label {
+      font-weight: 700; color: var(--text); margin-bottom: 10px;
+      font-size: 0.92rem; letter-spacing: 0.3px;
+    }
+
+    /* 題型選擇 — 3 cols */
+    .type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
+    .type-btn {
+      border-radius: 14px; border: 3px solid transparent;
+      padding: 16px 6px; cursor: pointer; text-align: center;
+      font-weight: 700; background: white;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+      user-select: none; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .type-btn .t-icon { font-size: 1.6rem; line-height: 1.4; }
+    .type-btn .t-icon .katex { font-size: 1em; }
+    .type-btn .t-eg .katex   { font-size: 0.85em; }
+    .type-btn .t-name { font-size: 0.9rem; margin-top: 5px; color: var(--text); }
+    .type-btn .t-eg   { font-size: 0.68rem; color: var(--text-light); margin-top: 3px; font-style: italic; }
+    .type-btn.selected {
+      border-color: var(--primary);
+      background: #eef2ff;
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(99,102,241,0.25);
+    }
+
+    /* 張數選擇 — 3 cols */
+    .count-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 28px; }
+    .count-btn {
+      border-radius: 14px; border: 3px solid transparent;
+      padding: 14px 6px; cursor: pointer; text-align: center;
+      font-weight: 700; background: white;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+      user-select: none; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .count-btn .c-num  { font-size: 1.6rem; color: var(--primary); font-weight: 900; }
+    .count-btn .c-unit { font-size: 0.75rem; color: var(--text-light); margin-top: 2px; }
+    .count-btn .c-sub  { font-size: 0.68rem; color: var(--text-light); margin-top: 3px; }
+    .count-btn.selected {
+      border-color: var(--primary);
+      background: #eef2ff;
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(99,102,241,0.25);
+    }
+
+    .rule-box {
+      background: #e0e7ff; border-radius: 14px; padding: 14px 16px;
+      color: #3730a3; font-size: 0.84rem; line-height: 1.65; margin-bottom: 24px;
+    }
+    .rule-box strong { display: block; margin-bottom: 5px; font-size: 0.9rem; }
+
+    /* ── GAME ── */
+    .game-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0 0 14px; gap: 6px;
+    }
+    .hdr-chip {
+      flex: 1; background: white; border-radius: 12px; padding: 7px 10px;
+      font-size: 0.78rem; font-weight: 700; color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+    }
+    .hdr-chip b { color: var(--primary); font-size: 0.88rem; }
+
+    /* ── Card Grid ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      flex: 1;
+      align-content: center;
+    }
+
+    /* ── Card — unified color, no type label ── */
+    .fc {
+      aspect-ratio: 1;
+      width: 100%;
+      border-radius: 13px;
+      border: 2.5px solid #c7d2fe;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      text-align: center;
+      user-select: none;
+      position: relative;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.3s, background 0.2s, border-color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .fc-val {
+      color: #3730a3;
+      line-height: 1.2;
+      font-size: clamp(1rem, 4.8vw, 1.35rem);
+      max-width: 92%;
+      text-align: center;
+      padding: 2px;
+    }
+
+    /* KaTeX overrides — inherit card colour, fit inside small cards */
+    .fc-val .katex { font-size: 1em; color: inherit; }
+    .fc-val .katex-html { white-space: normal; }
+
+    /* Selected */
+    .fc.selected {
+      transform: scale(1.08);
+      background: #eef2ff;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.35), 0 4px 16px rgba(99,102,241,0.25);
+      z-index: 2;
+    }
+
+    /* Correct flash */
+    .fc.correct {
+      background: #d1fae5 !important;
+      border-color: #34d399 !important;
+      transform: scale(1.1) !important;
+      box-shadow: 0 0 0 3px rgba(34,197,94,0.4) !important;
+    }
+
+    /* Matched — space kept, card invisible */
+    .fc.matched {
+      opacity: 0 !important;
+      transform: scale(0.3) !important;
+      pointer-events: none;
+      box-shadow: none !important;
+      transition: opacity 0.3s ease, transform 0.3s ease !important;
+    }
+
+    /* Wrong */
+    .fc.wrong {
+      background: #fee2e2 !important;
+      border-color: #fca5a5 !important;
+      transform: scale(1) !important;
+      box-shadow: none !important;
+    }
+    @keyframes wrongShake {
+      0%,100% { transform: translateX(0) scale(1); }
+      20%      { transform: translateX(-6px) scale(1); }
+      60%      { transform: translateX(6px)  scale(1); }
+    }
+    .fc.wrong { animation: wrongShake 0.42s ease; }
+
+    /* ── RESULT ── */
+    .result-wrap {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px;
+    }
+    .result-emoji { font-size: 4.5rem; line-height: 1; }
+    .result-title { font-size: 1.5rem; font-weight: 800; color: var(--text); margin-top: 8px; }
+    .stars        { font-size: 2rem; letter-spacing: 6px; margin: 6px 0; }
+
+    .stats-box {
+      width: 100%; background: #f8faff; border-radius: 16px;
+      padding: 16px 20px; margin-top: 16px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .stat-row { display: flex; justify-content: space-between; align-items: center; }
+    .stat-lbl { color: var(--text-light); font-size: 0.95rem; }
+    .stat-val { font-weight: 800; font-size: 1.05rem; color: var(--text); }
+
+    /* ── Shared Buttons ── */
+    .btn-primary {
+      width: 100%; padding: 17px; background: var(--primary); color: white;
+      border: none; border-radius: 18px; font-size: 1.1rem; font-weight: 700;
+      cursor: pointer; margin-top: 4px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-primary:active { background: var(--primary-dark); transform: scale(0.98); }
+    .btn-ghost {
+      width: 100%; padding: 14px; background: transparent; color: var(--primary);
+      border: 2.5px solid var(--primary); border-radius: 18px;
+      font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 10px;
+      transition: background 0.15s;
+    }
+    .btn-ghost:active { background: #e0e7ff; }
+
+    /* ── Celebration ── */
+    @keyframes celebFade {
+      0%   { opacity: 0; transform: scale(0.4); }
+      50%  { opacity: 1; transform: scale(1.25); }
+      100% { opacity: 0; transform: scale(1); }
+    }
+    .celeb {
+      position: fixed; inset: 0; display: flex; align-items: center;
+      justify-content: center; font-size: 6rem; pointer-events: none;
+      z-index: 999; animation: celebFade 0.9s ease forwards;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ MENU ══ -->
+<div class="screen active" id="menuScreen">
+  <div class="menu-hero">
+    <div class="icon">🎴</div>
+    <h1>數學配對</h1>
+    <p>點選算式與答案配對，配對成功即消除！</p>
+  </div>
+
+  <!-- 題型 -->
+  <div class="section-label">選擇題型</div>
+  <div class="type-grid">
+    <div class="type-btn selected" id="tPower" onclick="selectType('power',this)">
+      <div class="t-icon" id="iconPower"></div>
+      <div class="t-name">次方</div>
+      <div class="t-eg" id="egPower"></div>
+    </div>
+    <div class="type-btn" id="tRoot" onclick="selectType('root',this)">
+      <div class="t-icon" id="iconRoot"></div>
+      <div class="t-name">平方根</div>
+      <div class="t-eg" id="egRoot"></div>
+    </div>
+    <div class="type-btn" id="tMixed" onclick="selectType('mixed',this)">
+      <div class="t-icon">🎲</div>
+      <div class="t-name">混合</div>
+      <div class="t-eg">兩者皆有</div>
+    </div>
+  </div>
+
+  <!-- 張數 -->
+  <div class="section-label">選擇張數</div>
+  <div class="count-grid">
+    <div class="count-btn selected" id="c8" onclick="selectCount(8,this)">
+      <div class="c-num">8</div>
+      <div class="c-unit">張牌</div>
+      <div class="c-sub">4 組配對</div>
+    </div>
+    <div class="count-btn" id="c12" onclick="selectCount(12,this)">
+      <div class="c-num">12</div>
+      <div class="c-unit">張牌</div>
+      <div class="c-sub">6 組配對</div>
+    </div>
+    <div class="count-btn" id="c16" onclick="selectCount(16,this)">
+      <div class="c-num">16</div>
+      <div class="c-unit">張牌</div>
+      <div class="c-sub">8 組配對</div>
+    </div>
+  </div>
+
+  <div class="rule-box">
+    <strong>🎴 遊戲規則</strong>
+    找出算式與答案的正確配對！<br>
+    點算式 → 點答案，答對消除，答錯閃紅。<br>
+    全部消完即過關 🎉
+  </div>
+
+  <button class="btn-primary" onclick="startGame()">開始遊戲 ▶</button>
+</div>
+
+<!-- ══ GAME ══ -->
+<div class="screen" id="gameScreen">
+  <div class="game-header">
+    <div class="hdr-chip">⏱ <b id="timerDisp">00:00</b></div>
+    <div class="hdr-chip">✅ <b id="pairsDisp">0/0</b></div>
+    <div class="hdr-chip">❌ <b id="wrongDisp">0</b></div>
+  </div>
+  <div class="card-grid" id="cardGrid"></div>
+</div>
+
+<!-- ══ RESULT ══ -->
+<div class="screen" id="resultScreen">
+  <div style="height:44px"></div>
+  <div class="result-wrap">
+    <div class="result-emoji" id="resEmoji">🏆</div>
+    <div class="result-title" id="resTitle">配對完成！</div>
+    <div class="stars" id="resStars">⭐⭐⭐</div>
+    <div class="stats-box">
+      <div class="stat-row">
+        <span class="stat-lbl">⏱ 完成時間</span>
+        <span class="stat-val" id="resTime">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-lbl">🔄 嘗試次數</span>
+        <span class="stat-val" id="resAttempts">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-lbl">❌ 配錯次數</span>
+        <span class="stat-val" id="resWrong">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-lbl">🎯 準確率</span>
+        <span class="stat-val" id="resAcc">—</span>
+      </div>
+    </div>
+  </div>
+  <button class="btn-primary" onclick="startGame()">再玩一次 🔄</button>
+  <button class="btn-ghost"   onclick="goMenu()">重新設定</button>
+</div>
+
+<script>
+/* ══ Math rendering helpers (KaTeX) ══ */
+const K = (latex) => katex.renderToString(latex, { throwOnError: false, displayMode: false });
+const sq = n  => K(`\\sqrt{${n}}`);
+const pw = n  => K(`${n}^2`);
+
+/* ══ Data Pools ══ */
+const POOL_POWER = [
+  { h: pw(2),  a:4   },
+  { h: pw(3),  a:9   },
+  { h: pw(4),  a:16  },
+  { h: pw(5),  a:25  },
+  { h: pw(6),  a:36  },
+  { h: pw(7),  a:49  },
+  { h: pw(8),  a:64  },
+  { h: pw(9),  a:81  },
+  { h: pw(10), a:100 },
+  { h: pw(11), a:121 },
+  { h: pw(12), a:144 },
+];
+
+const POOL_ROOT = [
+  { h: sq(4),   a:2  },
+  { h: sq(9),   a:3  },
+  { h: sq(16),  a:4  },
+  { h: sq(25),  a:5  },
+  { h: sq(36),  a:6  },
+  { h: sq(49),  a:7  },
+  { h: sq(64),  a:8  },
+  { h: sq(81),  a:9  },
+  { h: sq(100), a:10 },
+  { h: sq(121), a:11 },
+  { h: sq(144), a:12 },
+];
+
+/* ══ Settings ══ */
+let qType = 'power';
+let cardCount = 8;
+
+/* ══ Game State ══ */
+let cardData = [], selected = null;
+let matchedCount = 0, totalPairs = 0;
+let attempts = 0, wrongs = 0;
+let timerID = null, secs = 0, locked = false;
+
+/* ══ Helpers ══ */
+const $ = id => document.getElementById(id);
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.random() * (i + 1) | 0;
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function fmtTime(s) {
+  const m = s / 60 | 0, ss = s % 60;
+  return m > 0 ? `${m} 分 ${ss} 秒` : `${ss} 秒`;
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+/* ══ Menu Selections ══ */
+function selectType(t, el) {
+  qType = t;
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function selectCount(n, el) {
+  cardCount = n;
+  document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+/* ══ Pair Picking ══ */
+function pickPairs() {
+  const n = cardCount / 2; // number of pairs
+
+  if (qType === 'power') {
+    /* Consecutive slice for tight distractor answers */
+    const max = POOL_POWER.length - n;
+    const start = Math.floor(Math.random() * (max + 1));
+    return POOL_POWER.slice(start, start + n);
+  }
+
+  if (qType === 'root') {
+    const max = POOL_ROOT.length - n;
+    const start = Math.floor(Math.random() * (max + 1));
+    return POOL_ROOT.slice(start, start + n);
+  }
+
+  /* Mixed: half from each pool, unique answers */
+  const seen = new Set();
+  const half = Math.floor(n / 2);
+  const rest = n - half;
+
+  const pickUnique = (pool, count) => {
+    const result = [];
+    for (const p of shuffle(pool)) {
+      if (result.length >= count) break;
+      if (!seen.has(p.a)) { seen.add(p.a); result.push(p); }
+    }
+    return result;
+  };
+
+  return shuffle([...pickUnique(POOL_POWER, half), ...pickUnique(POOL_ROOT, rest)]);
+}
+
+/* ══ Game Start ══ */
+function startGame() {
+  clearInterval(timerID);
+  secs = 0; attempts = 0; wrongs = 0; matchedCount = 0;
+  selected = null; locked = false;
+
+  const pairs = pickPairs();
+  totalPairs = pairs.length;
+
+  /* Build shuffled card data */
+  cardData = [];
+  pairs.forEach((p, pid) => {
+    cardData.push({ pid, type: 'expr', h: p.h,       isAns: false });
+    cardData.push({ pid, type: 'ans',  h: K(`${p.a}`), isAns: true });
+  });
+  cardData = shuffle(cardData);
+
+  /* Render */
+  const grid = $('cardGrid');
+  grid.innerHTML = '';
+  cardData.forEach((c, idx) => {
+    const el = document.createElement('div');
+    el.className = 'fc';
+    el.dataset.idx = idx;
+    el.innerHTML = `<div class="fc-val">${c.h}</div>`;
+    el.addEventListener('click', () => handleClick(idx, el));
+    grid.appendChild(el);
+  });
+
+  updateHUD();
+  showScreen('gameScreen');
+  $('timerDisp').textContent = '00:00';
+  timerID = setInterval(() => {
+    secs++;
+    $('timerDisp').textContent =
+      String(secs / 60 | 0).padStart(2,'0') + ':' + String(secs % 60).padStart(2,'0');
+  }, 1000);
+}
+
+/* ══ Click Handler ══ */
+function handleClick(idx, el) {
+  if (locked) return;
+  if (el.classList.contains('matched')) return;
+
+  /* Tap same card → deselect */
+  if (selected && selected.idx === idx) {
+    el.classList.remove('selected');
+    selected = null;
+    return;
+  }
+
+  /* First pick */
+  if (!selected) {
+    el.classList.add('selected');
+    selected = { idx, el };
+    return;
+  }
+
+  /* Second pick — must be different type */
+  const A = selected;
+  const B = { idx, el };
+
+  if (cardData[A.idx].type === cardData[B.idx].type) {
+    /* Same type: swap selection */
+    A.el.classList.remove('selected');
+    el.classList.add('selected');
+    selected = B;
+    return;
+  }
+
+  locked = true;
+  attempts++;
+  A.el.classList.remove('selected');
+  selected = null;
+
+  if (cardData[A.idx].pid === cardData[B.idx].pid) {
+    /* ✅ Match */
+    A.el.classList.add('correct');
+    B.el.classList.add('correct');
+    setTimeout(() => {
+      A.el.classList.replace('correct', 'matched');
+      B.el.classList.replace('correct', 'matched');
+      matchedCount++;
+      locked = false;
+      updateHUD();
+      if (matchedCount === totalPairs) {
+        clearInterval(timerID);
+        celebrate();
+        setTimeout(showResult, 900);
+      }
+    }, 350);
+  } else {
+    /* ❌ Wrong */
+    wrongs++;
+    A.el.classList.add('wrong');
+    B.el.classList.add('wrong');
+    updateHUD();
+    setTimeout(() => {
+      A.el.classList.remove('wrong');
+      B.el.classList.remove('wrong');
+      locked = false;
+    }, 650);
+  }
+}
+
+/* ══ HUD ══ */
+function updateHUD() {
+  $('pairsDisp').textContent = `${matchedCount}/${totalPairs}`;
+  $('wrongDisp').textContent  = wrongs;
+}
+
+/* ══ Celebrate ══ */
+function celebrate() {
+  const d = document.createElement('div');
+  d.className = 'celeb'; d.textContent = '🎉';
+  document.body.appendChild(d);
+  setTimeout(() => d.remove(), 950);
+}
+
+/* ══ Result ══ */
+function showResult() {
+  const stars = wrongs === 0 ? '⭐⭐⭐' : wrongs <= 2 ? '⭐⭐' : '⭐';
+  const acc   = attempts > 0 ? Math.round((matchedCount / attempts) * 100) : 100;
+  $('resEmoji').textContent    = '🏆';
+  $('resTitle').textContent    = '配對完成！';
+  $('resStars').textContent    = stars;
+  $('resTime').textContent     = fmtTime(secs);
+  $('resAttempts').textContent = `${attempts} 次`;
+  $('resWrong').textContent    = `${wrongs} 次`;
+  $('resAcc').textContent      = `${acc}%`;
+  showScreen('resultScreen');
+}
+
+/* ══ Menu ══ */
+function goMenu() {
+  clearInterval(timerID);
+  showScreen('menuScreen');
+}
+
+/* ══ Render menu math icons & examples with KaTeX ══ */
+$('iconPower').innerHTML = K('n^2');
+$('egPower').innerHTML   = K('3^2 = 9');
+$('iconRoot').innerHTML  = K('\\sqrt{n}');
+$('egRoot').innerHTML    = K('\\sqrt{49} = 7');
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('math-match-sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
