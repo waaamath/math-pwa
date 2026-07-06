@@ -1,0 +1,10 @@
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+
+# 憑證（切勿提交）
+*.token
+client_secret*.json
+.env
